@@ -64,7 +64,8 @@ type Player struct {
 	track   *music.Track
 	out     *audio.Player
 	stream  stream
-	watch   *watched // stream, as out plays it
+	watch   *watched      // stream, as out plays it
+	tapping tapSwitch     // whether the playing stream keeps what it decodes, for the spectrum
 	info    *music.Stream // what the current track streams
 	fade    fader
 	gain    float64 // the current track's normalizing gain
@@ -707,7 +708,7 @@ func (p *Player) loadSkipping(at, skipped, dir int, play bool, from time.Duratio
 			}
 			p.stream, p.info = s, info
 			p.gain = normGain(info)
-			p.watch = &watched{stream: s, now: p.now, ended: func() { p.post(func() {}) }}
+			p.watch = &watched{stream: s, tap: newTap(s.SampleRate(), &p.tapping), now: p.now, ended: func() { p.post(func() {}) }}
 			p.out = audio.NewPlayer(p.watch)
 			// From its middle, as a session picked up again, it fades in.
 			level := 1.0

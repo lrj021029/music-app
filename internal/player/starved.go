@@ -15,6 +15,7 @@ const starvedAfter = 250 * time.Millisecond
 // watched is the stream that plays, timing what it's asked.
 type watched struct {
 	stream
+	tap *Tap // keeps what it decodes, for the spectrum
 	now func() time.Time
 	// ended hears that a call that took starvedAfter or longer returned,
 	// for what said it's buffering to say so no more.
@@ -24,12 +25,16 @@ type watched struct {
 
 func (w *watched) Read(dst []float32) (int, error) {
 	defer w.begin()()
-	return w.stream.Read(dst)
+	n, err := w.stream.Read(dst)
+	w.tap.write(dst[:n], w.stream.Channels())
+	return n, err
 }
 
 func (w *watched) SetPosition(frame int64) error {
 	defer w.begin()()
-	return w.stream.SetPosition(frame)
+	err := w.stream.SetPosition(frame)
+	w.tap.seek(frame)
+	return err
 }
 
 func (w *watched) begin() func() {

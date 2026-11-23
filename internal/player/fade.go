@@ -62,6 +62,13 @@ func (f *fader) setGain(g float64) {
 	f.apply(time.Now())
 }
 
+// current returns the level now.
+func (f *fader) current() float64 {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.level(time.Now())
+}
+
 // silent reports whether the level is at nothing, faded out.
 func (f *fader) silent() bool {
 	f.mu.Lock()
