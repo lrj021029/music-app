@@ -1,4 +1,5 @@
 /build/
+/dist-spectrum/
 /.mygo/
 mygo_windows_*.syso
 /mygo-music

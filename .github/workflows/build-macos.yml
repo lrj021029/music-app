@@ -1,0 +1,27 @@
+# Builds the Apple silicon disk image by hand, from the Actions tab or with
+# `gh workflow run build-macos.yml`: signed ad hoc, not notarized, for
+# trying a branch on a Mac. The disk image needs macOS's hdiutil, and the
+# icon Xcode's actool, which no other runner has.
+name: Build macOS
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Build
+        run: go tool mygo build -platform darwin/arm64 -sign - -skip-notarize -o dist
+      - uses: actions/upload-artifact@v5
+        with:
+          name: mygo-music-darwin-arm64
+          path: dist/darwin-arm64/*.dmg
