@@ -155,6 +155,7 @@ type app struct {
 	npArt                 *artwork      // the cover whose colors Now Playing shows
 	npCoverState          coverState    // the cover of Now Playing, as it is tilted and flicked
 	wallState             wallState     // the wall of the queue's covers, as it is dragged
+	spectrum              spectrumState // the spectrum pane, as last drawn
 	quiet                 quietState    // the quiet parts of the song playing, for its top comments
 	sig                   playerSig
 	quitting              bool

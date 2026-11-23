@@ -466,6 +466,42 @@ func (a *app) settingsSections(c *ui.Context, p palette) []settingsSection {
 		})
 	})
 
+	add("visualizer", T("Visualizer"), iconCharts, func(row settingsRow, block settingsBlock) {
+		row(T("Spectrum"), T("A Spectrum tab in Now Playing, its bars moving with the music that plays. Off, nothing measures the music."), func() {
+			if ui.Switch(c.Key("spectrum"), &s.Spectrum).Label(T("Spectrum")).Changed() {
+				a.changed()
+			}
+		})
+		row(T("Theme"), T("The colors of the bars. Album Adaptive takes them from the cover of the song playing."), func() {
+			labels := make([]string, len(spectrumThemes))
+			at := 0
+			for i, t := range spectrumThemes {
+				labels[i] = t.label
+				if t.id == a.spectrumTheme() {
+					at = i
+				}
+			}
+			if i, ok := choice(c, "spectrum-theme", T("Theme"), labels, at); ok {
+				s.SpectrumTheme = spectrumThemes[i].id
+				a.changed()
+			}
+		})
+		row(T("Frame Rate"), T("How often the bars move. 60 FPS is smoother, and uses a little more power."), func() {
+			labels := make([]string, len(spectrumRates))
+			at := 0
+			for i, r := range spectrumRates {
+				labels[i] = r.label
+				if r.fps == a.spectrumRate(false) {
+					at = i
+				}
+			}
+			if i, ok := choice(c, "spectrum-fps", T("Frame Rate"), labels, at); ok {
+				s.SpectrumFPS = spectrumRates[i].fps
+				a.changed()
+			}
+		})
+	})
+
 	if a.captionsShown() && a.anyCan("shows") {
 		add("podcasts", T("Podcasts"), iconPodcast, func(row settingsRow, block settingsBlock) { a.captionSettings(row, c) })
 	}

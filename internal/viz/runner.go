@@ -45,6 +45,10 @@ type Runner struct {
 	now  func() time.Time
 	tick func(time.Duration) (<-chan time.Time, func())
 
+	// OnStop, if set before the runner is first asked, runs on its
+	// goroutine as it stops, no longer asked: what feeds it may stop too.
+	OnStop func()
+
 	asked   atomic.Int64 // when it was last asked for, in Unix nanoseconds
 	running atomic.Bool
 
@@ -105,7 +109,13 @@ func (r *Runner) loop() {
 		if !r.wanted(now) {
 			r.running.Store(false)
 			// Asked again as it stopped, it goes on.
-			if !r.wanted(r.now()) || !r.running.CompareAndSwap(false, true) {
+			if !r.wanted(r.now()) {
+				if r.OnStop != nil {
+					r.OnStop()
+				}
+				return
+			}
+			if !r.running.CompareAndSwap(false, true) {
 				return
 			}
 		}

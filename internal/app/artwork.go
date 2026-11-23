@@ -22,6 +22,7 @@ import (
 	_ "golang.org/x/image/webp"
 
 	"mygo-music/internal/music"
+	"mygo-music/internal/viz"
 )
 
 // artwork is a cover, decoded and ready to draw, with what the player
@@ -29,7 +30,8 @@ import (
 type artwork struct {
 	bmp      *ui.Bitmap
 	backdrop *ui.Bitmap
-	tint     ui.Color // the cover's most vivid color
+	tint     ui.Color   // the cover's most vivid color
+	pal      []ui.Color // the cover's colors, the most of it first (viz.Palette)
 	failed   bool
 	used     time.Time // when it was last asked for
 	size     int       // the bytes it keeps: its data, and the backdrop's pixels
@@ -148,7 +150,7 @@ func (c *artCache) get(url string, backdrop bool) *artwork {
 			}
 			// A backdrop shares the bitmap of the cover it is of, which
 			// each counts: the cache keeps either without the other.
-			a := &artwork{bmp: l.bmp, tint: l.tint, used: c.now(), size: l.size}
+			a := &artwork{bmp: l.bmp, tint: l.tint, pal: l.pal, used: c.now(), size: l.size}
 			if blurred != nil {
 				a.backdrop = ui.NewBitmap(blurred)
 				a.size += len(blurred.Pix)
@@ -169,6 +171,7 @@ type artLoad struct {
 	bmp  *ui.Bitmap
 	img  image.Image
 	tint ui.Color
+	pal  []ui.Color
 	size int
 	err  error
 	n    int // those waiting for it, counted on the main thread
@@ -241,6 +244,7 @@ func (c *artCache) load(key string, l *artLoad) {
 		c.pixels.give(took)
 		if l.err == nil {
 			l.tint = dominantColor(l.img)
+			l.pal = viz.Palette(l.img, 6)
 		}
 	})
 }

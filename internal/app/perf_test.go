@@ -118,6 +118,22 @@ func TestBackdropFadeEnds(t *testing.T) {
 	}
 }
 
+// The spectrum with nothing playing, its bars at rest, asks for no frames.
+func TestSpectrumPausedFrameBudget(t *testing.T) {
+	a := newTestApp()
+	a.pl.Cue([]music.Track{song("7", "宝船", "DOUDOU")})
+	a.pl.Seek(12 * time.Second) // cued, not playing
+	a.nowPlaying, a.npPane = true, paneSpectrum
+	tt := ui.NewTester(a.view, 1200, 800)
+	settled(tt)
+	tt.Advance(2 * time.Second)
+	tt.Frame()
+	tt.Advance(time.Second)
+	if tt.FramePending() {
+		t.Error("the spectrum at rest asks for frames")
+	}
+}
+
 // A retro player paused, its record or reels still and its tonearm at
 // rest, asks for no frames.
 func TestRetroPlayerPausedFrameBudget(t *testing.T) {

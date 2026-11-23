@@ -286,6 +286,9 @@ func (a *app) nowPlayingView(c *ui.Context) {
 func (a *app) nowPlayingBody(c *ui.Context, tr *music.Track, art *artwork, accent ui.Color, w, h float32, pointerIn bool) {
 	pl := a.pl
 	a.commentsFor(tr)
+	if a.npPane == paneSpectrum && !a.settings.Spectrum {
+		a.npPane = a.lyricsPaneChosen()
+	}
 	// An episode has what it is about and its captions in place of lyrics; a
 	// song, lyrics in place of those. Comments are for a source that has them.
 	switch episode := tr.ShowID != ""; {
@@ -414,6 +417,8 @@ func (a *app) nowPlayingBody(c *ui.Context, tr *music.Track, art *artwork, accen
 					a.showPane(c, tr)
 				case paneCaptions:
 					a.captionsPane(c, tr, h)
+				case paneSpectrum:
+					a.spectrumPane(c)
 				default:
 					a.queuePane(c)
 				}
@@ -478,6 +483,7 @@ const (
 	paneShow
 	paneCaptions
 	paneWall
+	paneSpectrum
 )
 
 // npTab is a tab of Now Playing: its pane, and what it says.
@@ -499,6 +505,9 @@ func (a *app) npTabs() []npTab {
 		tabs = append(tabs, npTab{paneQueue, T("Up Next")})
 	} else {
 		tabs = []npTab{{paneLyrics, T("Lyrics")}, {paneStage, T("Stage")}, {paneQueue, T("Up Next")}, {paneWall, T("Wall")}}
+	}
+	if a.settings.Spectrum {
+		tabs = append(tabs, npTab{paneSpectrum, T("Spectrum")})
 	}
 	if tr != nil && a.trackLib(tr).can("comments") {
 		tabs = append(tabs, npTab{paneComments, T("Comments")})

@@ -78,6 +78,14 @@ type settings struct {
 	// rising and swelling with the bass: an experiment the listener turns
 	// on.
 	Fog bool `json:"fog"`
+	// Spectrum shows the Spectrum tab in Now Playing, whose bars move with
+	// what plays: off, nothing measures the music.
+	Spectrum bool `json:"spectrum"`
+	// SpectrumTheme is the colors of its bars (spectrumThemes): Classic
+	// LED's if empty.
+	SpectrumTheme string `json:"spectrumTheme,omitempty"`
+	// SpectrumFPS is how often its bars move: 30 or 60.
+	SpectrumFPS int `json:"spectrumFPS,omitempty"`
 	// AppIcon is where the app's icon shows on macOS (appIcons); elsewhere
 	// it is always in the notification area.
 	AppIcon string `json:"appIcon"`
@@ -91,7 +99,7 @@ type settings struct {
 }
 
 func defaultSettings() settings {
-	return settings{Language: i18n.System, NotchActivity: true, Quality: "high", Appearance: "system", Volume: 0.8, Normalize: true, AppIcon: "dock-and-menubar", CacheMB: 2048}
+	return settings{Language: i18n.System, NotchActivity: true, Quality: "high", Appearance: "system", Volume: 0.8, Normalize: true, Spectrum: true, SpectrumTheme: "classic", SpectrumFPS: 30, AppIcon: "dock-and-menubar", CacheMB: 2048}
 }
 
 func settingsPath() (string, error) {
