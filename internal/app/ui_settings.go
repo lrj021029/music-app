@@ -500,6 +500,7 @@ func (a *app) settingsSections(c *ui.Context, p palette) []settingsSection {
 				a.changed()
 			}
 		})
+		a.spectrumSettings(c, row)
 	})
 
 	if a.captionsShown() && a.anyCan("shows") {

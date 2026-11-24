@@ -30,9 +30,13 @@ func (c Config) withDefaults() Config {
 
 const (
 	// spanDB is how far below the top the bars reach down, and headroomDB
-	// how far above the loudest bar lately the top is.
-	spanDB     = 54
+	// how far above the loudest bar lately the top is. The lowest gate of
+	// that span lights nothing, so that a band that quiet goes dark, and the
+	// rest rise as their level to the power 1.5: every bar of a busy song
+	// used to keep the same floor of segments lit.
+	spanDB     = 48
 	headroomDB = 3
+	gate       = 0.08
 	// The top follows the music's loudness, up at once and down by agcFall
 	// decibels a second, so that a quiet song fills the bars as a loud one
 	// does; but never lower than agcFloor, where it would show only noise.
@@ -199,7 +203,9 @@ func (s *Spectrum) measure(target *[MaxBars]float32, sec, gain float64) {
 	// loudness put it.
 	bottom := s.ref + headroomDB - spanDB - float32(20*math.Log10(gain))
 	for b := range s.bars {
-		target[b] = min(max((target[b]-bottom)/spanDB, 0), 1)
+		v := (target[b] - bottom) / spanDB
+		v = min(max((v-gate)/(1-gate), 0), 1)
+		target[b] = v * float32(math.Sqrt(float64(v)))
 	}
 }
 

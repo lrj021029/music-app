@@ -86,6 +86,26 @@ type settings struct {
 	SpectrumTheme string `json:"spectrumTheme,omitempty"`
 	// SpectrumFPS is how often its bars move: 30 or 60.
 	SpectrumFPS int `json:"spectrumFPS,omitempty"`
+	// SpectrumDensity is how many bars there are and how far apart
+	// (spectrumDensities), or "custom" for SpectrumBars and the gaps: the
+	// theme's own if empty. Choosing a theme leaves it be.
+	SpectrumDensity string `json:"spectrumDensity,omitempty"`
+	// SpectrumBars, SpectrumBarGap and SpectrumSegGap are the custom
+	// density's: the bars, and the space beside each bar and above each
+	// segment, as a share of its room.
+	SpectrumBars   int     `json:"spectrumBars,omitempty"`
+	SpectrumBarGap float64 `json:"spectrumBarGap,omitempty"`
+	SpectrumSegGap float64 `json:"spectrumSegGap,omitempty"`
+	// SpectrumInactive is how the segments not lit show: "off", "subtle"
+	// or "visible", the theme's way if empty.
+	SpectrumInactive string `json:"spectrumInactive,omitempty"`
+	// SpectrumGlow glows faintly around the top of the lit bars, and
+	// SpectrumPeaks holds a mark a moment where each bar peaked.
+	SpectrumGlow  bool `json:"spectrumGlow"`
+	SpectrumPeaks bool `json:"spectrumPeaks"`
+	// SpectrumAppleColor is the color of Apple Colors (viz.AppleStyle): all
+	// of them if empty.
+	SpectrumAppleColor string `json:"spectrumAppleColor,omitempty"`
 	// AppIcon is where the app's icon shows on macOS (appIcons); elsewhere
 	// it is always in the notification area.
 	AppIcon string `json:"appIcon"`
@@ -99,7 +119,7 @@ type settings struct {
 }
 
 func defaultSettings() settings {
-	return settings{Language: i18n.System, NotchActivity: true, Quality: "high", Appearance: "system", Volume: 0.8, Normalize: true, Spectrum: true, SpectrumTheme: "classic", SpectrumFPS: 30, AppIcon: "dock-and-menubar", CacheMB: 2048}
+	return settings{Language: i18n.System, NotchActivity: true, Quality: "high", Appearance: "system", Volume: 0.8, Normalize: true, Spectrum: true, SpectrumTheme: "classic", SpectrumFPS: 30, SpectrumGlow: true, SpectrumPeaks: true, AppIcon: "dock-and-menubar", CacheMB: 2048}
 }
 
 func settingsPath() (string, error) {

@@ -9,8 +9,8 @@ import (
 )
 
 // The themes of the spectrum, by their ids. Classic LED is the default;
-// Minimal is of its family. Album Adaptive takes a cover's colors
-// (AlbumStyle).
+// Minimal is of its family. Apple Colors has a color of Apple's to choose
+// (AppleStyle), and Album Adaptive takes a cover's colors (AlbumStyle).
 const (
 	ThemeClassic = "classic"
 	ThemeMinimal = "minimal"
@@ -18,6 +18,33 @@ const (
 	ThemeNeon    = "neon"
 	ThemeAlbum   = "album"
 )
+
+// How the segments not lit show: not at all, faintly, as a hint of where
+// the bars stand, or as the dark LEDs of a hi-fi's matrix.
+const (
+	InactiveOff     = "off"
+	InactiveSubtle  = "subtle"
+	InactiveVisible = "visible"
+)
+
+// ThemeDensity returns the density of a theme's bars, unless the listener
+// chose another.
+func ThemeDensity(id string) string {
+	if id == ThemeMinimal {
+		return DensitySpacious
+	}
+	return DensityBalanced
+}
+
+// ThemeInactive returns how a theme shows the segments not lit, unless the
+// listener chose otherwise.
+func ThemeInactive(id string) string {
+	switch id {
+	case ThemeMinimal, ThemeNeon:
+		return InactiveOff
+	}
+	return InactiveSubtle
+}
 
 // A Stop is a color of a style's bars, at a height from 0, their foot, to
 // 1, their top.
@@ -31,12 +58,15 @@ type Stop struct {
 type Style struct {
 	stops [6]Stop
 	n     int
-	Off   ui.Color // a segment not lit, none if clear
+	Off   ui.Color // a segment not lit, shown subtly; none if clear
 	Peak  ui.Color // a peak's; clear, the color where it is, lighter
 	Glow  float32  // how strong the glow around the lit segments is, 0 for none
 }
 
-var white = ui.RGB(255, 255, 255)
+var (
+	white = ui.RGB(255, 255, 255)
+	black = ui.RGB(0, 0, 0)
+)
 
 func style(off, peak ui.Color, glow float32, stops ...Stop) Style {
 	s := Style{Off: off, Peak: peak, Glow: glow}
@@ -69,24 +99,61 @@ func (s *Style) PeakAt(t float32) ui.Color {
 	return s.At(t).Mix(white, 0.4)
 }
 
+// OffAt returns the color of a segment not lit at height t, shown as mode
+// says (InactiveOff and the rest): clear for none. Visible, it is the lit
+// color darkened, as an LED's that is off, never bright enough to pass for
+// one lit.
+func (s *Style) OffAt(t float32, mode string) ui.Color {
+	switch mode {
+	case InactiveOff:
+		return ui.Color{}
+	case InactiveVisible:
+		return s.At(t).Mix(black, 0.35).Alpha(0.2)
+	}
+	return s.Off
+}
+
 // StyleOf returns the style of a theme: Classic LED's for one it doesn't
-// know, and for Album Adaptive, which needs a cover.
+// know, and for Album Adaptive, which needs a cover. Its glow is faint: a
+// hint of light about the top of the bars, not a haze over them.
 func StyleOf(id string) Style {
 	switch id {
 	case ThemeMinimal:
 		c := ui.RGB(206, 211, 220)
-		return style(c.Alpha(0.05), white.Alpha(0.9), 0, Stop{0, c.Alpha(0.5)}, Stop{1, c.Alpha(0.92)})
+		return style(c.Alpha(0.04), white.Alpha(0.9), 0, Stop{0, c.Alpha(0.5)}, Stop{1, c.Alpha(0.92)})
 	case ThemeApple:
-		return style(white.Alpha(0.05), ui.Color{}, 0.25,
+		return style(white.Alpha(0.04), ui.Color{}, 0.18,
 			Stop{0, ui.Hex("#009DDC")}, Stop{0.2, ui.Hex("#963D97")}, Stop{0.4, ui.Hex("#E03A3E")},
 			Stop{0.6, ui.Hex("#F5821F")}, Stop{0.8, ui.Hex("#FDB827")}, Stop{1, ui.Hex("#61BB46")})
 	case ThemeNeon:
-		return style(ui.RGBA(120, 90, 255, 0.07), ui.Hex("#F4F0FF"), 0.5,
+		return style(ui.RGBA(120, 90, 255, 0.06), ui.Hex("#F4F0FF"), 0.38,
 			Stop{0, ui.Hex("#00E5FF")}, Stop{0.4, ui.Hex("#3D7BFF")}, Stop{0.75, ui.Hex("#8A4DFF")}, Stop{1, ui.Hex("#FF3DF2")})
 	}
-	return style(white.Alpha(0.06), ui.Color{}, 0.3,
+	return style(white.Alpha(0.045), ui.Color{}, 0.22,
 		Stop{0, ui.Hex("#1ED760")}, Stop{0.3, ui.Hex("#2ED3C6")}, Stop{0.55, ui.Hex("#F5E14B")},
 		Stop{0.78, ui.Hex("#FF9F2E")}, Stop{1, ui.Hex("#FF3B30")})
+}
+
+// appleColors are the colors of Apple Colors besides all of them, by the
+// ids the settings keep: the system colors of Apple's dark appearance.
+var appleColors = map[string]ui.Color{
+	"blue":   ui.Hex("#0A84FF"),
+	"purple": ui.Hex("#BF5AF2"),
+	"pink":   ui.Hex("#FF375F"),
+	"green":  ui.Hex("#30D158"),
+	"orange": ui.Hex("#FF9F0A"),
+	"cyan":   ui.Hex("#64D2FF"),
+}
+
+// AppleStyle returns the style of Apple Colors in one of its colors, darker
+// at the foot of the bars and lighter at their top: all of them, as
+// StyleOf(ThemeApple) has, for one it doesn't know.
+func AppleStyle(color string) Style {
+	c, ok := appleColors[color]
+	if !ok {
+		return StyleOf(ThemeApple)
+	}
+	return style(c.Alpha(0.05), ui.Color{}, 0.2, Stop{0, c.Mix(black, 0.3)}, Stop{0.55, c}, Stop{1, c.Mix(white, 0.4)})
 }
 
 // AlbumStyle returns the style of a cover's colors, as Palette found them,
@@ -114,7 +181,7 @@ func AlbumStyle(pal []ui.Color) Style {
 			h, s, v := hsv(pal[0])
 			base = rgb(h, min(s, 0.25), max(v, 0.55))
 		}
-		return style(base.Alpha(0.07), white.Alpha(0.95), 0.2, Stop{0, base}, Stop{1, base.Mix(white, 0.7)})
+		return style(base.Alpha(0.05), white.Alpha(0.95), 0.15, Stop{0, base}, Stop{1, base.Mix(white, 0.7)})
 	}
 	slices.SortFunc(picks, func(a, b swatch) int { return cmp.Compare(a.v, b.v) })
 	stops := make([]Stop, 0, 4)
@@ -128,7 +195,7 @@ func AlbumStyle(pal []ui.Color) Style {
 	}
 	top := stops[len(stops)-1].Color
 	stops = append(stops, Stop{1, top.Mix(white, 0.3)})
-	return style(stops[0].Color.Alpha(0.08), ui.Color{}, 0.35, stops...)
+	return style(stops[0].Color.Alpha(0.06), ui.Color{}, 0.25, stops...)
 }
 
 func hueDist(a, b float64) float64 {
