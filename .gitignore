@@ -1,7 +1,11 @@
 /build/
 /dist-spectrum/
+/dist-refine/
+/dist/
 /.mygo/
 mygo_windows_*.syso
+*.syso
+*.exe
 /mygo-music
 /node_modules/
-/dist-refine/
+.DS_Store
